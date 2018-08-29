@@ -11,6 +11,7 @@ public class Fanfiction {
     static int mod = 1000000009;
     static HashMap<Integer , Integer> ind;
     static Node[] nodes = new Node[2501];
+    static int[][] dp;
     public static void main(String[] args) throws Exception {
         FastScanner in = new FastScanner(System.in);//new FileInputStream(new File("Fanfiction.in")));
         //PrintWriter out = new PrintWriter(new File("Fanfiction.out"));
@@ -50,6 +51,7 @@ public class Fanfiction {
         book = in.next();
         m = book.length();
         cost = new int[m];
+        ind.put(0 , 0);
         for(int i = 0;i < m ;i++){
             cost[i] = in.nextInt();
         }
@@ -59,6 +61,23 @@ public class Fanfiction {
             if(!skip[i]) add(0 , dict[i] , 0);
         }
         dfs(0 , "");
+        book = in.next();
+        m = book.length();
+        cost = new int[m];
+        for(int i = 0;i < m; i++){
+            cost[i] = in.nextInt();
+        }
+        dp = new int[n][m];
+        for(int i = 0;i < n; i++){for(int j =0;j < m; j++){dp[i][j] = -1;}}
+        System.out.println(dp(0 , 0));
+    }
+    static int dp(int node , int ind){
+        if(dp[node][ind] > -1)return dp[node][ind];
+        for(int i = 0;i < 26; i++){
+            if(book.charAt(ind) - 'a' == i){
+
+            }
+        }
     }
     static class Node{
         int[] chil;
@@ -69,10 +88,19 @@ public class Fanfiction {
         }
     }
     public static void dfs(int ind , String word) {
-        
+        int hsh = 0;
+        int mult = 1;
+        for(int i = word.length() - 1; i > 0; i--){
+            hsh += (mult* (word.charAt(i) - 'a' + 1))%mod;
+            mult *= 27;
+            mult %= mod;
+            if(Fanfiction.ind.containsKey(hsh)){
+                nodes[ind].bk = Fanfiction.ind.get(hsh);
+            }
+        }
     }
     public static void add(int ind , String word , int prvhash){
-        prvhash *= 26;
+        prvhash *= 27;
         prvhash += word.charAt(0) - 'a' + 1;
         prvhash %= mod;
         int first = word.charAt(0) - 'a';
