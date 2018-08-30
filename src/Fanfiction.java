@@ -75,9 +75,11 @@ public class Fanfiction {
         int cur;
         for(int i = 0;i < 26; i++){
             cur = 0;
-            if(book.charAt(ind) - 'a' != i) cur = cost[i];
+            if(book.charAt(ind) - 'a' != i) cur = cost[ind];
             int nd = node;
             while(nd > 0 && nodes[nd].chil[i] == 0) nd = nodes[nd].bk;
+            if (nodes[nd].chil[i] == 0) min = Math.min(min , cur + dp(0 , ind + 1));
+            else min = Math.min(min , cur + dp(nodes[nd].chil[i] , ind + 1));
 
         }
         dp[node][ind] = min;
