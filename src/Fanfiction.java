@@ -4,10 +4,10 @@ import java.io.*;
 public class Fanfiction {
     static int n , t , m , cnt;
     static String[] dict;
-    static boolean[] skip;
     static String book;
     static int[] cost;
-    static HashSet<Integer>[] subs;
+    static Integer[] perm;
+    static HashSet<Integer>words;
     static int mod = 1000000009;
     static HashMap<Integer , Integer> ind;
     static Node[] nodes = new Node[2501];
@@ -18,32 +18,10 @@ public class Fanfiction {
         n = in.nextInt();
         t = in.nextInt();
         dict = new String[n];
-        subs = new HashSet[n];
-        skip  = new boolean[n];
+        words = new HashSet<Integer>();
         for(int i = 0;i < n; i++){
             dict[i] = in.next();
-            subs[i] = new HashSet<Integer>();
-            for(int j = 1; j < dict[i].length(); j++){
-                long hsh = 0;
-                for(int k = j; k < dict[i].length(); k++){
-                    hsh *= 26;
-                    hsh += dict[i].charAt(k) - 'a' + 1;
-                    hsh %= mod;
-                    subs[i].add((int)hsh);
-                }
-            }
-        }
-        for(int i = 0;i < n; i++){
-            if(skip[i])continue;
-            long hsh = 0;
-            for(int j = 0;j < dict[i].length(); j++){
-                hsh *= 26;
-                hsh += dict[i].charAt(j) - 'a' + 1;
-                hsh %= mod;
-            }
-            for(int j = 0;j < n; j++){
-                if(subs[j].contains((int)hsh))skip[j] = true;
-            }
+            words.add(hash(dict[i]));
         }
         book = in.next();
         m = book.length();
@@ -54,82 +32,110 @@ public class Fanfiction {
             cost[i] = in.nextInt();
         }
         cnt = 1;
-        nodes[0] = new Node();
+        nodes[0] = new Node(0);
         for(int i = 0; i < n; i++){
-            if(!skip[i]) add(0 , dict[i] , 0);
+            add(0 , dict[i] , 0 , 0);
         }
-        dfs(0 , "");
-        dp = new int[2501][m+1];
-        for(int i = 0;i < 2501; i++){for(int j =0;j < m; j++){dp[i][j] = -1;}}
-        dp(0 , 0);
+        perm = new Integer[cnt];
+        for(int i = 0;i < cnt; i++){
+            perm[i] = i;
+        }
+        Arrays.sort(perm, new Comparator<Integer>() {
+            @Override
+            public int compare(Integer o1, Integer o2) {
+                if(nodes[o1] == null) return 1;
+                if(nodes[o2] == null) return -1;
+                return nodes[o1].dep - nodes[o2].dep;
+            }
+        });
+        dfs(0, "");
+        dp = new int[cnt][m+1];
+        for(int node = 0; node < cnt; node++){
+            if(nodes[node].term)dp[node][m]= Integer.MAX_VALUE/2;
+        }
+        for(int ind = m-1; ind >= 0; ind--){
+            for(int j = 0; j < cnt; j++){
+                int node = perm[j];
+                if(nodes[node].term){
+                    dp[node][ind] = Integer.MAX_VALUE/2;
+                    continue;
+                }
+                int min = Integer.MAX_VALUE/2;
+                int cur;
+                for(int i = 0;i < t; i++){
+                    cur = 0;
+                    if(book.charAt(ind) - 'a' != i) cur = cost[ind];
+                    int nd = node;
+                    while(nd > 0 && nodes[nd].chil[i] == 0) nd = nodes[nd].bk;
+                    if (nodes[nd].chil[i] == 0) min = Math.min(min , cur + dp[0][ind + 1]);
+                    else min = Math.min(min , cur + dp[nodes[nd].chil[i]][ind + 1]);
+
+                }
+                dp[node][ind] = min;
+            }
+        }
         System.out.println(dp[0][0] >= Integer.MAX_VALUE/2 ? -1 : dp[0][0]);
     }
-    static int dp(int node , int ind){
-        if(nodes[node].term){
-            dp[node][ind] = Integer.MAX_VALUE/2;
-            return dp[node][ind];
+    static int hash(String s){
+        long hsh = 0;
+        for(int i = 0;i < s.length(); i++){
+            hsh *= (t+1);
+            hsh += s.charAt(i) - 'a' + 1;
+            hsh %= mod;
         }
-        if(ind == m)return 0;
-        if(dp[node][ind] > -1)return dp[node][ind];
-        int min = Integer.MAX_VALUE/2;
-        int cur;
-        for(int i = 0;i < 26; i++){
-            cur = 0;
-            if(book.charAt(ind) - 'a' != i) cur = cost[ind];
-            int nd = node;
-            while(nd > 0 && nodes[nd].chil[i] == 0) nd = nodes[nd].bk;
-            if (nodes[nd].chil[i] == 0) min = Math.min(min , cur + dp(0 , ind + 1));
-            else min = Math.min(min , cur + dp(nodes[nd].chil[i] , ind + 1));
-
-        }
-        dp[node][ind] = min;
-        return dp[node][ind];
+        return (int)hsh;
     }
     static class Node{
         int[] chil;
+        int dep;
         int bk;
         boolean term;
-        public Node(){
-            chil = new int[26];
+        public Node(int dep){
+            chil = new int[t];
+            this.dep = dep;
         }
     }
     public static void dfs(int ind , String word) {
-        int hsh = 0;
-        int mult = 1;
+        long hsh = 0;
+        long mult = 1;
         for(int i = word.length() - 1; i > 0; i--){
             hsh += (mult* (word.charAt(i) - 'a' + 1))%mod;
-            mult *= 27;
+            mult *= (t+1);
             mult %= mod;
-            if(Fanfiction.ind.containsKey(hsh)){
-                nodes[ind].bk = Fanfiction.ind.get(hsh);
+            hsh %= mod;
+            if(Fanfiction.ind.containsKey((int)hsh)){
+                nodes[ind].bk = Fanfiction.ind.get((int)hsh);
+            }
+            if(words.contains((int)hsh)){
+                int a = 0;
+                nodes[ind].term = true;
             }
         }
-        for(int i = 0;i < 26; i++){
+        for(int i = 0;i < t; i++){
             if(nodes[ind].chil[i] != 0){
                 dfs(nodes[ind].chil[i] , word + (char)(i+'a'));
             }
         }
     }
-    public static void add(int ind , String word , int prvhash){
-        if(word.length() == 0){
+    public static void add(int ind , String word , int prvhash , int loc){
+        if(word.length() == loc){
             nodes[ind].term = true;
             return;
         }
-        prvhash *= 27;
-        prvhash += word.charAt(0) - 'a' + 1;
+        prvhash *= (t+1);
+        prvhash += word.charAt(loc) - 'a' + 1;
         prvhash %= mod;
-        int first = word.charAt(0) - 'a';
-        word = word.substring(1);
+        int first = word.charAt(loc) - 'a';
         if(nodes[ind].chil[first] == 0){
-            nodes[cnt] = new Node();
+            nodes[cnt] = new Node(loc + 1);
             nodes[ind].chil[first] = cnt;
             Fanfiction.ind.put(prvhash , cnt);
             cnt++;
-            add(cnt - 1 , word , prvhash);
+            add(cnt - 1 , word , prvhash , loc + 1);
 
         }
         else{
-            add(nodes[ind].chil[first] , word , prvhash);
+            add(nodes[ind].chil[first] , word , prvhash , loc + 1);
         }
     }
 
