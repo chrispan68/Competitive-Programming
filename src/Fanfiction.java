@@ -60,13 +60,13 @@ public class Fanfiction {
         }
         dfs(0 , "");
         dp = new int[2501][m];
-        for(int i = 0;i < n; i++){for(int j =0;j < m; j++){dp[i][j] = -1;}}
+        for(int i = 0;i < 2501; i++){for(int j =0;j < m; j++){dp[i][j] = -1;}}
         dp(0 , 0);
-        System.out.println(dp[0][0] == Integer.MAX_VALUE/2 ? -1 : dp[0][0]);
+        System.out.println(dp[0][0] >= Integer.MAX_VALUE/2 ? -1 : dp[0][0]);
     }
     static int dp(int node , int ind){
         if(ind == m)return 0;
-        if(nodes[ind].term)return Integer.MAX_VALUE/2;
+        if(nodes[node].term)return Integer.MAX_VALUE/2;
         if(dp[node][ind] > -1)return dp[node][ind];
         int min = Integer.MAX_VALUE/2;
         for(int i = 0;i < 26; i++){
@@ -75,16 +75,14 @@ public class Fanfiction {
                     if(node == 0)min = Math.min(min , dp(0 , ind + 1));
                     else min = Math.min(min , dp(nodes[node].bk , ind));
                 }
-
-                min = Math.min(min , dp(nodes[node].chil[i] , ind+1));
+                else min = Math.min(min , dp(nodes[node].chil[i] , ind+1));
             }
             else {
                 if(nodes[node].chil[i] == 0) {
-                    if(node == 0)min = Math.min(min , 1 + dp(0 , ind + 1));
-                    else min = Math.min(min , 1 + dp(nodes[node].bk , ind));
+                    if(node == 0)min = Math.min(min , cost[ind] + dp(0 , ind + 1));
+                    else min = Math.min(min , cost[ind] + dp(nodes[node].bk , ind));
                 }
-
-                min = Math.min(min , 1 + cost[ind] + dp(nodes[node].chil[i] , ind+1));
+                else min = Math.min(min ,  cost[ind] + dp(nodes[node].chil[i] , ind+1));
             }
         }
         dp[node][ind] = min;
