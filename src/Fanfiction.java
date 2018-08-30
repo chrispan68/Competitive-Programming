@@ -59,31 +59,26 @@ public class Fanfiction {
             if(!skip[i]) add(0 , dict[i] , 0);
         }
         dfs(0 , "");
-        dp = new int[2501][m];
+        dp = new int[2501][m+1];
         for(int i = 0;i < 2501; i++){for(int j =0;j < m; j++){dp[i][j] = -1;}}
         dp(0 , 0);
         System.out.println(dp[0][0] >= Integer.MAX_VALUE/2 ? -1 : dp[0][0]);
     }
     static int dp(int node , int ind){
+        if(nodes[node].term){
+            dp[node][ind] = Integer.MAX_VALUE/2;
+            return dp[node][ind];
+        }
         if(ind == m)return 0;
-        if(nodes[node].term)return Integer.MAX_VALUE/2;
         if(dp[node][ind] > -1)return dp[node][ind];
         int min = Integer.MAX_VALUE/2;
+        int cur;
         for(int i = 0;i < 26; i++){
-            if(book.charAt(ind) - 'a' == i){
-                if(nodes[node].chil[i] == 0) {
-                    if(node == 0)min = Math.min(min , dp(0 , ind + 1));
-                    else min = Math.min(min , dp(nodes[node].bk , ind));
-                }
-                else min = Math.min(min , dp(nodes[node].chil[i] , ind+1));
-            }
-            else {
-                if(nodes[node].chil[i] == 0) {
-                    if(node == 0)min = Math.min(min , cost[ind] + dp(0 , ind + 1));
-                    else min = Math.min(min , cost[ind] + dp(nodes[node].bk , ind));
-                }
-                else min = Math.min(min ,  cost[ind] + dp(nodes[node].chil[i] , ind+1));
-            }
+            cur = 0;
+            if(book.charAt(ind) - 'a' != i) cur = cost[i];
+            int nd = node;
+            while(nd > 0 && nodes[nd].chil[i] == 0) nd = nodes[nd].bk;
+
         }
         dp[node][ind] = min;
         return dp[node][ind];
@@ -114,6 +109,10 @@ public class Fanfiction {
         }
     }
     public static void add(int ind , String word , int prvhash){
+        if(word.length() == 0){
+            nodes[ind].term = true;
+            return;
+        }
         prvhash *= 27;
         prvhash += word.charAt(0) - 'a' + 1;
         prvhash %= mod;
@@ -124,15 +123,11 @@ public class Fanfiction {
             nodes[ind].chil[first] = cnt;
             Fanfiction.ind.put(prvhash , cnt);
             cnt++;
-            if(word.length() > 0) add(cnt - 1 , word , prvhash);
-            else {
-                nodes[ind].term = true;
-            }
+            add(cnt - 1 , word , prvhash);
 
         }
         else{
-            if(word.length() > 0) add(nodes[ind].chil[first] , word , prvhash);
-            else nodes[nodes[ind].chil[first]].term = true;
+            add(nodes[ind].chil[first] , word , prvhash);
         }
     }
 
