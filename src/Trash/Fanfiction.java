@@ -1,3 +1,5 @@
+package Trash;
+
 import java.util.*;
 import java.io.*;
 
@@ -13,8 +15,8 @@ public class Fanfiction {
     static Node[] nodes = new Node[2501];
     static int[][] dp;
     public static void main(String[] args) throws Exception {
-        FastScanner in = new FastScanner(System.in);//new FileInputStream(new File("Fanfiction.in")));
-        //PrintWriter out = new PrintWriter(new File("Fanfiction.out"));
+        FastScanner in = new FastScanner(System.in);//new FileInputStream(new File("Trash.Fanfiction.in")));
+        //PrintWriter out = new PrintWriter(new File("Trash.Fanfiction.out"));
         n = in.nextInt();
         t = in.nextInt();
         dict = new String[n];
