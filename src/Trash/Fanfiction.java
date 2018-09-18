@@ -4,141 +4,79 @@ import java.util.*;
 import java.io.*;
 
 public class Fanfiction {
-    static int n , t , m , cnt;
-    static String[] dict;
-    static String book;
-    static int[] cost;
-    static Integer[] perm;
-    static HashSet<Integer>words;
-    static int mod = 1000000009;
-    static HashMap<Integer , Integer> ind;
-    static Node[] nodes = new Node[2501];
+    static int n , t , sz , m;
+    static String word;
     static int[][] dp;
+    static int[]fail , cost;
+    static int[][] chil , trans;
+    static boolean[] term;
     public static void main(String[] args) throws Exception {
-        FastScanner in = new FastScanner(System.in);//new FileInputStream(new File("Trash.Fanfiction.in")));
-        //PrintWriter out = new PrintWriter(new File("Trash.Fanfiction.out"));
+        FastScanner in = new FastScanner(System.in);
         n = in.nextInt();
         t = in.nextInt();
-        dict = new String[n];
-        words = new HashSet<Integer>();
+        sz = 1;
+        fail = new int[2501];
+        chil = new int[2501][t];
+        trans = new int[2501][t];
+        term = new boolean[2501];
         for(int i = 0;i < n; i++){
-            dict[i] = in.next();
-            words.add(hash(dict[i]));
+            add(in.next());
         }
-        book = in.next();
-        m = book.length();
+        word = in.next();
+        m = word.length();
         cost = new int[m];
-        ind = new HashMap<Integer , Integer>();
-        ind.put(0 , 0);
         for(int i = 0;i < m ;i++){
             cost[i] = in.nextInt();
         }
-        cnt = 1;
-        nodes[0] = new Node(0);
-        for(int i = 0; i < n; i++){
-            add(0 , dict[i] , 0 , 0);
-        }
-        perm = new Integer[cnt];
-        for(int i = 0;i < cnt; i++){
-            perm[i] = i;
-        }
-        Arrays.sort(perm, new Comparator<Integer>() {
-            @Override
-            public int compare(Integer o1, Integer o2) {
-                if(nodes[o1] == null) return 1;
-                if(nodes[o2] == null) return -1;
-                return nodes[o1].dep - nodes[o2].dep;
+        LinkedList<Integer> bfs = new LinkedList<Integer>();
+        fail[0] = -1;
+        bfs.add(0);
+        while(!bfs.isEmpty()){
+            int ind = bfs.removeFirst();
+            for(int i = 0;i < t; i++){
+                int cur = fail[ind];
+                int nex = chil[ind][i];
+                while(cur >= 0 && chil[cur][i] == 0)cur = fail[cur];
+                if(nex == 0){
+                    if (cur == -1) trans[ind][i] = 0;
+                    else trans[ind][i] = chil[cur][i];
+                }
+                else {
+                    trans[ind][i] = chil[ind][i];
+                    if (cur == -1) fail[nex] = 0;
+                    else fail[nex] = chil[cur][i];
+                    if (term[fail[nex]]) term[nex] = true;
+                    bfs.add(chil[ind][i]);
+                }
             }
-        });
-        dfs(0, "");
-        dp = new int[cnt][m+1];
-        for(int node = 0; node < cnt; node++){
-            if(nodes[node].term)dp[node][m]= Integer.MAX_VALUE/2;
         }
-        for(int ind = m-1; ind >= 0; ind--){
-            for(int j = 0; j < cnt; j++){
-                int node = perm[j];
-                if(nodes[node].term){
-                    dp[node][ind] = Integer.MAX_VALUE/2;
-                    continue;
+        dp = new int[sz][m+1];
+        for(int i = 0;i < sz; i++){
+            for(int j = 0;j < m; j++){
+                dp[i][j] = Integer.MAX_VALUE/2;
+            }
+        }
+        for(int i = m-1; i >= 0; i--){
+            for(int j = 0;j < sz; j++){
+                if(term[j])continue;
+                for(int k = 0;k < t; k++){
+                    if(!term[trans[j][k]])
+                    dp[j][i] = Math.min(dp[j][i] , (word.charAt(i) -'a' != k ? cost[i] : 0) + dp[trans[j][k]][i+1]);
                 }
-                int min = Integer.MAX_VALUE/2;
-                int cur;
-                for(int i = 0;i < t; i++){
-                    cur = 0;
-                    if(book.charAt(ind) - 'a' != i) cur = cost[ind];
-                    int nd = node;
-                    while(nd > 0 && nodes[nd].chil[i] == 0) nd = nodes[nd].bk;
-                    if (nodes[nd].chil[i] == 0) min = Math.min(min , cur + dp[0][ind + 1]);
-                    else min = Math.min(min , cur + dp[nodes[nd].chil[i]][ind + 1]);
-
-                }
-                dp[node][ind] = min;
             }
         }
         System.out.println(dp[0][0] >= Integer.MAX_VALUE/2 ? -1 : dp[0][0]);
     }
-    static int hash(String s){
-        long hsh = 0;
-        for(int i = 0;i < s.length(); i++){
-            hsh *= (t+1);
-            hsh += s.charAt(i) - 'a' + 1;
-            hsh %= mod;
-        }
-        return (int)hsh;
-    }
-    static class Node{
-        int[] chil;
-        int dep;
-        int bk;
-        boolean term;
-        public Node(int dep){
-            chil = new int[t];
-            this.dep = dep;
-        }
-    }
-    public static void dfs(int ind , String word) {
-        long hsh = 0;
-        long mult = 1;
-        for(int i = word.length() - 1; i > 0; i--){
-            hsh += (mult* (word.charAt(i) - 'a' + 1))%mod;
-            mult *= (t+1);
-            mult %= mod;
-            hsh %= mod;
-            if(Fanfiction.ind.containsKey((int)hsh)){
-                nodes[ind].bk = Fanfiction.ind.get((int)hsh);
+    static void add(String s){
+        int cur = 0;
+        char[] str = s.toCharArray();
+        for(char c : str){
+            if(chil[cur][c-'a'] == 0){
+                chil[cur][c-'a'] = sz++;
             }
-            if(words.contains((int)hsh)){
-                int a = 0;
-                nodes[ind].term = true;
-            }
+            cur = chil[cur][c-'a'];
         }
-        for(int i = 0;i < t; i++){
-            if(nodes[ind].chil[i] != 0){
-                dfs(nodes[ind].chil[i] , word + (char)(i+'a'));
-            }
-        }
-    }
-    public static void add(int ind , String word , int prvhash , int loc){
-        if(word.length() == loc){
-            nodes[ind].term = true;
-            return;
-        }
-        prvhash *= (t+1);
-        prvhash += word.charAt(loc) - 'a' + 1;
-        prvhash %= mod;
-        int first = word.charAt(loc) - 'a';
-        if(nodes[ind].chil[first] == 0){
-            nodes[cnt] = new Node(loc + 1);
-            nodes[ind].chil[first] = cnt;
-            Fanfiction.ind.put(prvhash , cnt);
-            cnt++;
-            add(cnt - 1 , word , prvhash , loc + 1);
-
-        }
-        else{
-            add(nodes[ind].chil[first] , word , prvhash , loc + 1);
-        }
+        term[cur] = true;
     }
 
     static class FastScanner {
@@ -210,4 +148,3 @@ public class Fanfiction {
         }
     }
 }
-
